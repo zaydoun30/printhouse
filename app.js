@@ -83,7 +83,7 @@ function layout(){
   const nav=[['index.html','Home','home'],['products.html','Products','products'],['faq.html','FAQ','faq'],['contact.html','Contact','contact']];
   document.body.insertAdjacentHTML('afterbegin',`
   <header class="site"><div class="wrap">
-    <a class="logo" href="index.html"><img src="img/logo.png" alt="Print House"></a>
+    <a class="logo" href="index.html"><img src="ph-logo.png" alt="Print House"></a>
     <button class="burger" aria-label="Menu">☰</button>
     <nav class="main">${nav.map(n=>`<a href="${n[0]}" class="${page===n[2]?'on':''}">${n[1]}</a>`).join('')}<a class="cta" href="products.html#customizer">Start Designing</a></nav>
   </div></header>`);
@@ -91,7 +91,7 @@ function layout(){
   <a class="float-wa" href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener" aria-label="WhatsApp" style="color:#04210f">${WA_ICON}</a>
   <footer class="site"><div class="wrap">
     <div class="cols">
-      <div><a class="logo badge" href="index.html"><img src="img/logo.png" alt="Print House"></a><p style="color:#b8b9bd;margin-top:14px;max-width:360px">Custom printing for Tunisia's creators. Upload your art, we print it on premium streetwear and deliver to your door.</p></div>
+      <div><a class="logo badge" href="index.html"><img src="ph-logo.png" alt="Print House"></a><p style="color:#b8b9bd;margin-top:14px;max-width:360px">Custom printing for Tunisia's creators. Upload your art, we print it on premium streetwear and deliver to your door.</p></div>
       <div><h4>Shop</h4><a href="products.html?p=tshirt#customizer">T-Shirts</a><a href="products.html?p=hoodie#customizer">Hoodies</a><a href="products.html?p=beanie#customizer">Beanies</a><a href="products.html?p=case#customizer">Phone Cases</a><a href="products.html?p=tote#customizer">Tote Bags</a></div>
       <div><h4>Help</h4><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener">WhatsApp +216 24 050 066</a><a href="https://wa.me/${WA_NUMBER2}" target="_blank" rel="noopener">WhatsApp +216 53 463 975</a></div>
     </div>
