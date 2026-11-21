@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your details – Print House</title><meta name="description" content="Enter your delivery details to finish your order.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png"><link rel="icon" type="image/png" sizes="512x512" href="img/favicon.png"><link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Print House"><meta property="og:title" content="Print House"><meta property="og:description" content="Custom printing in Tunisia. Upload your design, we print it on T-shirts, hoodies, beanies, phone cases and tote bags."><meta property="og:image" content="https://printhouse.tn/img/og-image.png"><meta property="og:url" content="https://printhouse.tn/">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Print House"><meta name="twitter:image" content="https://printhouse.tn/img/og-image.png"><meta name="theme-color" content="#0b0b0c"><link rel="stylesheet" href="style.css"></head>
+<body data-page="order">
+
+<div class="page-hero"><div class="wrap"><span class="eyebrow">Almost there</span><h1>Contact <span class="accent">details</span></h1><p class="lead" style="margin-top:14px">Tell us where to deliver. Next step: confirm on WhatsApp.</p></div></div>
+<section class="pad"><div class="wrap two" id="content">
+  <div class="card"><h2 style="font-size:1.7rem;margin-bottom:22px">Delivery info</h2>
+  <form id="of" novalidate>
+    <div class="field"><label>Full name *</label><input name="name" autocomplete="name" required><div class="err">Please enter your full name.</div></div>
+    <div class="field"><label>WhatsApp phone number *</label><input name="phone" type="tel" autocomplete="tel" placeholder="e.g. 24 050 066 or +216 24 050 066" required><div class="err">Enter a valid Tunisian number (8 digits, e.g. 24 050 066).</div></div>
+    <div class="field"><label>Governorate *</label><select name="city" required><option value="">Select…</option>
+      <option>Tunis</option><option>Ariana</option><option>Ben Arous</option><option>Manouba</option><option>Nabeul</option><option>Zaghouan</option><option>Bizerte</option><option>Béja</option><option>Jendouba</option><option>Le Kef</option><option>Siliana</option><option>Sousse</option><option>Monastir</option><option>Mahdia</option><option>Sfax</option><option>Kairouan</option><option>Kasserine</option><option>Sidi Bouzid</option><option>Gabès</option><option>Médenine</option><option>Tataouine</option><option>Gafsa</option><option>Tozeur</option><option>Kébili</option></select><div class="err">Please select your governorate.</div></div>
+    <div class="field"><label>Delivery address *</label><textarea name="address" rows="3" placeholder="Street, building, city, postal code" required></textarea><div class="err">Please enter your full delivery address.</div></div>
+    <div class="field"><label>Notes (optional)</label><textarea name="notes" rows="2" placeholder="Anything we should know about your design?"></textarea></div>
+    <button class="btn accent-bg block" type="submit">Submit order →</button>
+  </form></div>
+  <div class="card" id="sum"></div>
+</div></section>
+<script src="app.js"></script>
+<script>
+function pageInit(){
+  const o=load('ph_order');
+  if(!o){document.getElementById('content').innerHTML='<div class="card" style="grid-column:1/-1;text-align:center"><h2>No order yet</h2><p class="lead" style="margin:14px auto 22px">Design your product first, then come back here.</p><a class="btn accent-bg" href="index.html#customizer">Start designing</a></div>';return;}
+  document.getElementById('sum').innerHTML='<h2 style="font-size:1.4rem;margin-bottom:16px">Your order</h2>'+
+    '<div class="sum-thumb">'+o.files.map(f=>'<img src="'+f.thumb+'" alt="">').join('')+'</div>'+
+    row('Product',esc(o.productName))+row('Option',esc(o.variantLabel)+' – '+esc(o.variantDesc))+row('Colour',esc(o.color))+
+    (o.size?row('Size',esc(o.size)):'')+(o.model?row('Phone model',esc(o.model)):'')+row('Quantity',o.qty)+
+    o.files.map(f=>row('Design'+(o.files.length>1?' ('+f.side+')':''),esc(f.name))).join('')+
+    '<div class="sum-total"><span>Total</span><span>'+o.total+' DT</span></div><p style="font-size:.82rem;color:var(--grey);margin-top:10px">Delivery fee and payment are confirmed with you on WhatsApp.</p>'+
+    '<a href="index.html#customizer" style="display:inline-block;margin-top:14px;font-weight:700">← Edit design</a>';
+  function row(a,b){return '<div class="sum-row"><span>'+a+'</span><span>'+b+'</span></div>';}
+  const f=document.getElementById('of');
+  const prev=load('ph_customer');if(prev)for(const k in prev)if(f.elements[k])f.elements[k].value=prev[k];
+  f.addEventListener('submit',e=>{e.preventDefault();
+    const d=Object.fromEntries(new FormData(f));let ok=true;
+    const chk=(n,t)=>{const el=f.elements[n].closest('.field');const g=t(String(d[n]).trim());el.classList.toggle('bad',!g);if(!g)ok=false;};
+    chk('name',v=>v.length>2);chk('phone',validPhone);chk('city',v=>!!v);chk('address',v=>v.length>5);
+    if(!ok){toast('Please check the highlighted fields');return;}
+    const c={name:d.name.trim(),phone:'+216 '+normPhone(d.phone),city:d.city,address:d.address.trim(),notes:d.notes.trim()};
+    o.ref='PH-'+Date.now().toString(36).toUpperCase().slice(-6);
+    save('ph_order',o);save('ph_customer',c);
+    location.href='thank-you.html';
+  });
+}
+</script></body></html>
