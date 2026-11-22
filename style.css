@@ -201,3 +201,17 @@ nav.main{top:84px}
 
 .stage{aspect-ratio:400/440}
 .pcard svg{width:100%;aspect-ratio:1;height:auto}
+
+/* language button + RTL */
+nav.main .lang{font:700 .85rem var(--body);border:2px solid var(--black);background:#fff;border-radius:99px;padding:7px 14px;cursor:pointer}
+nav.main .lang:hover{background:var(--black);color:#fff}
+.numline{margin-top:16px;font-size:1.02rem}
+.faq-item button,.variant{text-align:start}
+:root[dir="rtl"]{--display:'Cairo','Archivo Black',system-ui,sans-serif;--body:'Cairo','Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif}
+[dir="rtl"] *{letter-spacing:0!important;text-transform:none!important}
+[dir="rtl"] h1,[dir="rtl"] h2,[dir="rtl"] h3{line-height:1.25;font-weight:800}
+[dir="rtl"] h1{font-size:clamp(2.2rem,5.4vw,4rem)}
+[dir="rtl"] .marquee div{animation-name:mqr}
+@keyframes mqr{to{transform:translateX(50%)}}
+[dir="rtl"] .float-wa{right:auto;left:18px}
+[dir="rtl"] .toast{direction:rtl}

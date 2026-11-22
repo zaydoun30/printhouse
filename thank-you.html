@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Thank you – Print House</title><meta name="description" content="Confirm your order via WhatsApp.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" sizes="32x32" href="ph-favicon-32.png"><link rel="icon" type="image/png" sizes="512x512" href="ph-favicon.png"><link rel="apple-touch-icon" href="ph-apple-touch-icon.png">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Print House"><meta property="og:title" content="Print House"><meta property="og:description" content="Custom printing in Tunisia. Upload your design, we print it on T-shirts, hoodies, beanies, phone cases and tote bags."><meta property="og:image" content="https://zaydoun30.github.io/printhouse/ph-og-image.png"><meta property="og:url" content="https://zaydoun30.github.io/printhouse/">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Print House"><meta name="twitter:image" content="https://zaydoun30.github.io/printhouse/ph-og-image.png"><meta name="theme-color" content="#0b0b0c"><link rel="stylesheet" href="style.css"></head>
@@ -10,26 +10,38 @@
 
 <section class="thanks"><div class="wrap" style="max-width:820px">
   <div class="check">✓</div>
-  <h1>Thank <span class="accent">you</span>, <span id="nm">friend</span>!</h1>
-  <p class="lead" style="margin:16px auto 34px">Your order is saved. <b>One last step:</b> tap the button below to send it to us on WhatsApp – the message is already written for you.</p>
+  <h1 id="th1"></h1>
+  <p class="lead" id="tlead" style="margin:16px auto 34px"></p>
   <a id="wa" class="wa-btn" href="https://wa.me/21624050066" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C8.8 3 3 8.8 3 16c0 2.3.6 4.5 1.7 6.4L3 29l6.8-1.8A13 13 0 0 0 16 29c7.2 0 13-5.8 13-13S23.2 3 16 3zm0 23.7c-2 0-3.9-.6-5.5-1.6l-.4-.2-4 1 1.1-3.9-.3-.4A10.6 10.6 0 1 1 16 26.7zm5.8-7.9c-.3-.2-1.9-.9-2.200-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.400-.5-2.600-1.600-1-.9-1.600-1.900-1.800-2.200-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.400s1 2.800 1.200 3c.1.200 2 3.100 4.900 4.300.7.300 1.200.5 1.600.6.700.2 1.300.2 1.800.1.600-.1 1.900-.8 2.100-1.500.3-.7.300-1.400.2-1.500-.1-.1-.3-.2-.6-.4z"/></svg><span>Confirm order via WhatsApp</span></a>
-  <p style="margin-top:18px"><a id="wa2" class="btn ghost" href="https://wa.me/21653463975" target="_blank" rel="noopener">Or confirm on our second number: +216 53 463 975</a></p>
-  <div class="notice">📎 <b>Don't forget:</b> after the chat opens, attach your original design file(s) (<span id="files"></span>) so we print from full quality. Your order is only confirmed once you send the message.</div>
-  <div class="card" style="text-align:left;margin-top:30px"><h3 style="margin-bottom:12px">Order summary · <span id="ref"></span></h3><div id="sum"></div></div>
-  <p style="margin-top:30px"><a href="index.html" class="btn ghost">← Back to home</a></p>
+  <p class="numline" id="numline"></p>
+  <p style="margin-top:6px"><a id="wa2" class="btn ghost" href="https://wa.me/21653463975" target="_blank" rel="noopener"></a></p>
+  <div class="notice" id="attach-note"></div>
+  <div class="card" style="text-align:start;margin-top:30px"><h3 style="margin-bottom:12px"><span id="sumt"></span> · <bdi id="ref"></bdi></h3><div id="sum"></div></div>
+  <p style="margin-top:30px"><a href="index.html" class="btn ghost" id="backhome"></a></p>
 </div></section>
-<script src="app.js"></script>
+<script src="i18n.js"></script><script src="app.js"></script>
 <script>
 function pageInit(){
   const o=load('ph_order'),c=load('ph_customer');
   if(!o||!o.ref||!c){location.replace('index.html');return;}
-  document.getElementById('nm').textContent=c.name.split(' ')[0];
+  const ar=LANG==='ar',first=esc(c.name.split(' ')[0]);
+  document.getElementById('th1').innerHTML=ar?('طلبك تسجّل يا <span class="accent">'+first+'</span> ✓'):('Order <span class="accent">received</span>, '+first+'!');
+  document.getElementById('tlead').innerHTML=ar?'طلبك تسجّل عندنا. <b>الخطوة الأخيرة:</b> ادخل أكّد الطلب على واتساب. الطلب ما يتأكدش حتى تبعث الرسالة.':'Your order is placed. <b>Last step:</b> go confirm it on WhatsApp. The order is only confirmed once you send the message.';
+  document.getElementById('numline').innerHTML=(ar?'رقم الواتساب متاعنا: ':'Our WhatsApp numbers: ')+'<b><bdi>+216 24 050 066</bdi></b> &nbsp;·&nbsp; <b><bdi>+216 53 463 975</bdi></b>';
+  document.getElementById('wa2').innerHTML=(ar?'أو أكّد على الرقم التاني: ':'Or confirm on our second number: ')+'<bdi>+216 53 463 975</bdi>';
+  document.getElementById('sumt').textContent=t('Order summary');
   document.getElementById('ref').textContent=o.ref;
-  document.getElementById('files').textContent=o.files.map(f=>f.name).join(', ');
-  const msg=buildWaMessage(o,c);document.getElementById('wa').href=waLink(msg);document.getElementById('wa2').href=waLink(msg,WA_NUMBER2);
-  const r=(a,b)=>'<div class="sum-row"><span>'+a+'</span><span>'+esc(b)+'</span></div>';
-  document.getElementById('sum').innerHTML=r('Product',o.productName+' – '+o.variantLabel+' ('+o.variantDesc+')')+r('Colour',o.color)+(o.size?r('Size',o.size):'')+(o.model?r('Phone model',o.model):'')+r('Quantity',o.qty)+
-    o.files.map(f=>r('Design file',f.name)).join('')+r('Name',c.name)+r('WhatsApp',c.phone)+r('Address',c.address+', '+c.city)+
-    '<div class="sum-total"><span>Total</span><span>'+o.total+' DT</span></div>';
+  document.getElementById('backhome').textContent=t('Back to home');
+  const allUp=o.files.every(f=>f.url);
+  document.getElementById('attach-note').innerHTML=allUp
+    ?(ar?'✓ <b>تصميمك تحمّل</b> والرابط متاعو موجود في رسالة الواتساب. اضغط إرسال وبرك.':'✓ <b>Your design is uploaded</b> and its link is inside the WhatsApp message. Just press send.')
+    :(ar?'📎 <b>ما تنساش:</b> بعد ما تتحل المحادثة، ابعث ملف التصميم الأصلي ('+o.files.map(f=>'<bdi>'+esc(f.name)+'</bdi>').join('، ')+') باش نطبعو بأحسن جودة.':'📎 <b>Do not forget:</b> after the chat opens, attach your original design file(s) ('+o.files.map(f=>'<bdi>'+esc(f.name)+'</bdi>').join(', ')+') so we print from full quality.');
+  const msg=buildWaMessage(o,c);
+  document.getElementById('wa').href=waLink(msg);document.getElementById('wa2').href=waLink(msg,WA_NUMBER2);
+  const r=(a,b)=>'<div class="sum-row"><span>'+a+'</span><span>'+b+'</span></div>';
+  const sideLbl=s=>s==='front'?t('Front'):t('Back');
+  document.getElementById('sum').innerHTML=r(t('Product'),esc(pname(o.product))+' – '+esc(t(o.variantLabel))+' ('+esc(t(o.variantDesc))+')')+r(t('Colour'),esc(cname(o.colorKey)))+(o.size?r(t('Size'),esc(o.size)):'')+(o.model?r(t('Phone model'),esc(t(o.model))):'')+r(t('Quantity'),o.qty)+
+    o.files.map(f=>r(t('Design')+(o.files.length>1?' ('+sideLbl(f.side)+')':''),'<bdi>'+esc(f.name)+'</bdi>')).join('')+r(t('Name'),esc(c.name))+r(t('WhatsApp'),'<bdi>'+esc(c.phone)+'</bdi>')+r(t('Address'),'<bdi>'+esc(c.address)+'</bdi>، '+esc(c.city))+
+    '<div class="sum-total"><span>'+t('Total')+'</span><span><bdi dir="ltr">'+o.total+' DT</bdi></span></div>';
 }
 </script></body></html>

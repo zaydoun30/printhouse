@@ -83,9 +83,30 @@ function toast(msg){let t=$('.toast');if(!t){t=document.createElement('div');t.c
 const save=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
 const load=k=>{try{return JSON.parse(sessionStorage.getItem(k))}catch(e){return null}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const dt=n=>n+' DT';
+const dt=n=>'<bdi dir="ltr">'+n+' DT</bdi>';
 function normPhone(v){let d=String(v).replace(/[\s.\-()]/g,'');d=d.replace(/^\+?216/,'').replace(/^00216/,'');return d;}
 function validPhone(v){return /^[2-579]\d{7}$/.test(normPhone(v));}
+
+/* ---------- language (Arabic default, English optional) ---------- */
+let LANG='ar';
+try{const q=new URLSearchParams(location.search).get('lang');if(q==='en'||q==='ar')localStorage.setItem('ph_lang',q);LANG=localStorage.getItem('ph_lang')||'ar';}catch(e){}
+if(LANG!=='ar'&&LANG!=='en')LANG='ar';
+document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
+const t=s=>(LANG==='ar'&&typeof AR_DICT!=='undefined'&&AR_DICT[s])||s;
+const AR_PRODUCT={tshirt:'تيشورت',hoodie:'هودي',beanie:'بونيه',case:'كاش تليفون',tote:'ساك توت'};
+const AR_COLOR={black:'أسود',white:'أبيض',navy:'كحلي',red:'أحمر',sand:'بيج',forest:'أخضر غامق',blue:'أزرق',grey:'رمادي',natural:'طبيعي',charcoal:'رمادي غامق',orange:'برتقالي'};
+const pname=(k,full)=>LANG==='ar'?AR_PRODUCT[k]:(full?PRODUCTS[k].name:PRODUCTS[k].name.split(' (')[0]);
+const cname=k=>LANG==='ar'?(AR_COLOR[k]||k):(COLORS[k]?COLORS[k][0]:k);
+function applyI18n(root){
+  if(LANG!=='ar'||typeof AR_DICT==='undefined')return;
+  root=root||document.body;
+  $$('[data-i18n]',root).forEach(e=>{const h=AR_HTML[e.dataset.i18n];if(h)e.innerHTML=h;});
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>(n.parentElement&&n.parentElement.closest('[data-i18n],script,style'))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[];while(w.nextNode())nodes.push(w.currentNode);
+  nodes.forEach(n=>{const x=n.nodeValue.trim();if(x&&AR_DICT[x])n.nodeValue=n.nodeValue.replace(x,AR_DICT[x]);});
+  $$('[placeholder]',root).forEach(e=>{const p=e.getAttribute('placeholder');if(AR_DICT[p])e.setAttribute('placeholder',AR_DICT[p]);});
+}
+function setLang(l){try{localStorage.setItem('ph_lang',l);}catch(e){}location.reload();}
 
 /* layout injection */
 function layout(){
@@ -95,7 +116,7 @@ function layout(){
   <header class="site"><div class="wrap">
     <a class="logo" href="index.html"><img src="ph-logo.png" alt="Print House"></a>
     <button class="burger" aria-label="Menu">☰</button>
-    <nav class="main">${nav.map(n=>`<a href="${n[0]}" class="${page===n[2]?'on':''}">${n[1]}</a>`).join('')}<a class="cta" href="products.html#customizer">Start Designing</a></nav>
+    <nav class="main">${nav.map(n=>`<a href="${n[0]}" class="${page===n[2]?'on':''}">${t(n[1])}</a>`).join('')}<a class="cta" href="products.html#customizer">${t('Start Designing')}</a><button class="lang" id="langbtn" type="button" aria-label="Language">${LANG==='ar'?'English':'عربي'}</button></nav>
   </div></header>`);
   document.body.insertAdjacentHTML('beforeend',`
   <a class="float-wa" href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener" aria-label="WhatsApp" style="color:#04210f">${WA_ICON}</a>
@@ -105,17 +126,18 @@ function layout(){
       <div><h4>Shop</h4><a href="products.html?p=tshirt#customizer">T-Shirts</a><a href="products.html?p=hoodie#customizer">Hoodies</a><a href="products.html?p=beanie#customizer">Beanies</a><a href="products.html?p=case#customizer">Phone Cases</a><a href="products.html?p=tote#customizer">Tote Bags</a></div>
       <div><h4>Help</h4><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener">WhatsApp +216 24 050 066</a><a href="https://wa.me/${WA_NUMBER2}" target="_blank" rel="noopener">WhatsApp +216 53 463 975</a></div>
     </div>
-    <div class="copy">© ${new Date().getFullYear()} Print House · Tunisia · Prices in Tunisian Dinar (DT)</div>
+    <div class="copy">© ${new Date().getFullYear()} Print House · ${LANG==='ar'?'تونس · الأسعار بالدينار التونسي (DT)':'Tunisia · Prices in Tunisian Dinar (DT)'}</div>
   </div></footer>`);
   $('.burger').onclick=()=>$('nav.main').classList.toggle('open');
+  $('#langbtn').onclick=()=>setLang(LANG==='ar'?'en':'ar');
 }
 
 /* ---------- Customizer ---------- */
 const DEFAULT_STATE=()=>({product:'tshirt',variant:'standard',color:'black',size:'M',model:PHONE_MODELS[0],qty:1,view:'front',designs:{front:null,back:null}});
 function fileToDesign(file){
   return new Promise((res,rej)=>{
-    if(!/^image\//.test(file.type)){rej('Please upload an image file (PNG, JPG, WEBP, SVG).');return;}
-    if(file.size>15*1024*1024){rej('File is too large (max 15 MB).');return;}
+    if(!/^image\//.test(file.type)){rej(t('Please upload an image file (PNG, JPG, WEBP, SVG).'));return;}
+    if(file.size>15*1024*1024){rej(t('File is too large (max 15 MB).'));return;}
     const fr=new FileReader();
     fr.onload=()=>{
       const img=new Image();
@@ -127,10 +149,10 @@ function fileToDesign(file){
         t.width=Math.round(img.width*ts);t.height=Math.round(img.height*ts);t.getContext('2d').drawImage(img,0,0,t.width,t.height);
         res({file:file,name:file.name,size:file.size,data:c.toDataURL('image/png'),thumb:t.toDataURL('image/png'),w:img.width,h:img.height});
       };
-      img.onerror=()=>rej('Could not read this image.');
+      img.onerror=()=>rej(t('Could not read this image.'));
       img.src=fr.result;
     };
-    fr.onerror=()=>rej('Could not read this file.');
+    fr.onerror=()=>rej(t('Could not read this file.'));
     fr.readAsDataURL(file);
   });
 }
@@ -157,46 +179,46 @@ function mountCustomizer(root,opts={}){
     root.innerHTML=`
     <div class="customizer">
       <div class="stage-card">
-        <div class="stage-top"><span class="pill">${esc(p.name)} · ${esc(COLORS[st.color][0])}</span>
-          ${sides.length>1?`<div class="view-tabs">${sides.map(s=>`<button data-view="${s}" class="${st.view===s?'on':''}">${s==='front'?'Front':'Back'}</button>`).join('')}</div>`:''}
+        <div class="stage-top"><span class="pill">${esc(pname(st.product,true))} · ${esc(cname(st.color))}</span>
+          ${sides.length>1?`<div class="view-tabs">${sides.map(s=>`<button data-view="${s}" class="${st.view===s?'on':''}">${s==='front'?t('Front'):t('Back')}</button>`).join('')}</div>`:''}
         </div>
         <div class="stage" style="--g:${COLORS[st.color][1]}">
           ${svgProduct(st.product,st.view)}
           <div class="print-area ${d?'filled':''}" style="left:${a[0]}%;top:${a[1]}%;width:${a[2]}%;height:${a[3]}%">
-            ${d?`<img src="${d.data}" alt="Your design">`:`<div class="ph">Your design<br>goes here</div>`}
+            ${d?`<img src="${d.data}" alt="${t('Your design')}">`:`<div class="ph">${t('Your design goes here')}</div>`}
           </div>
         </div>
-        <div class="stage-foot"><span>${d?'📎 '+esc(d.name):'No design uploaded yet'}</span><span>Live preview</span></div>
+        <div class="stage-foot"><span>${d?'📎 <bdi>'+esc(d.name)+'</bdi>':t('No design uploaded yet')}</span><span>${t('Live preview')}</span></div>
       </div>
 
       <div class="panel">
-        <div class="step"><div class="step-title"><b>1</b>Choose your product</div>
-          <div class="gallery">${Object.keys(PRODUCTS).map(k=>`<div class="pcard ${k===st.product?'on':''}" data-prod="${k}">${thumb(k,k===st.product?st.color:'black')}${esc(PRODUCTS[k].name.split(' (')[0])}</div>`).join('')}</div>
+        <div class="step"><div class="step-title"><b>1</b>${t('Choose your product')}</div>
+          <div class="gallery">${Object.keys(PRODUCTS).map(k=>`<div class="pcard ${k===st.product?'on':''}" data-prod="${k}">${thumb(k,k===st.product?st.color:'black')}${esc(pname(k))}</div>`).join('')}</div>
         </div>
 
-        <div class="step"><div class="step-title"><b>2</b>Upload your design${sideName?' ('+sideName+')':''}</div>
+        <div class="step"><div class="step-title"><b>2</b>${t('Upload your design')}${sideName?' ('+t(sideName==='front'?'Front':'Back')+')':''}</div>
           <label class="drop ${d?'has':''}" id="drop">
             <input type="file" id="file" accept="image/*" hidden>
-            <span class="big">${d?'✓ Design added – replace':'⬆ Upload your design / photo'}</span>
-            <small>Drag &amp; drop or click to browse · PNG, JPG, WEBP, SVG · max 15 MB</small>
+            <span class="big">${d?t('✓ Design added – replace'):t('⬆ Upload your design / photo')}</span>
+            <small>${t('Drag & drop or click to browse · PNG, JPG, WEBP, SVG · max 15 MB')}</small>
           </label>
-          ${d?`<div class="fileline"><span>📎 ${esc(d.name)}</span><button id="rm">Remove</button></div>`:''}
-          ${sides.length>1?`<p style="font-size:.85rem;color:var(--grey);margin-top:10px">Retro needs a design for both sides – switch between Front / Back on the preview. ${st.designs.front?'✓ Front':'○ Front'} · ${st.designs.back?'✓ Back':'○ Back'}</p>`:''}
+          ${d?`<div class="fileline"><span>📎 <bdi>${esc(d.name)}</bdi></span><button id="rm">${t('Remove')}</button></div>`:''}
+          ${sides.length>1?`<p style="font-size:.85rem;color:var(--grey);margin-top:10px">${t('Retro needs a design for both sides – switch between Front / Back on the preview.')} ${st.designs.front?'✓ ':'○ '}${t('Front')} · ${st.designs.back?'✓ ':'○ '}${t('Back')}</p>`:''}
         </div>
 
-        <div class="step"><div class="step-title"><b>3</b>Customize</div>
-          ${p.variants.length>1?`<div class="opt-label">Print location</div><div class="variants">${p.variants.map(x=>`<button class="variant ${x.id===st.variant?'on':''}" data-var="${x.id}"><b>${x.label}</b><span>${x.desc}</span><em>${x.price} DT</em></button>`).join('')}</div>`:''}
-          <div class="opt-label">Colour — ${esc(COLORS[st.color][0])}</div>
-          <div class="swatches">${p.colors.map(c=>`<div class="sw ${c===st.color?'on':''}" data-col="${c}" title="${COLORS[c][0]}" style="background:${COLORS[c][1]}"></div>`).join('')}</div>
-          ${p.sizes?`<div class="opt-label">Size</div><div class="sizes">${p.sizes.map(s=>`<button class="sz ${s===st.size?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>`:''}
-          ${p.models?`<div class="opt-label">Phone model</div><select id="model">${PHONE_MODELS.map(m=>`<option ${m===st.model?'selected':''}>${m}</option>`).join('')}</select>`:''}
-          <div class="opt-label">Quantity</div>
+        <div class="step"><div class="step-title"><b>3</b>${t('Customize')}</div>
+          ${p.variants.length>1?`<div class="opt-label">${t('Print location')}</div><div class="variants">${p.variants.map(x=>`<button class="variant ${x.id===st.variant?'on':''}" data-var="${x.id}"><b>${t(x.label)}</b><span>${t(x.desc)}</span><em><bdi dir="ltr">${x.price} DT</bdi></em></button>`).join('')}</div>`:''}
+          <div class="opt-label">${t('Colour —')} ${esc(cname(st.color))}</div>
+          <div class="swatches">${p.colors.map(c=>`<div class="sw ${c===st.color?'on':''}" data-col="${c}" title="${cname(c)}" style="background:${COLORS[c][1]}"></div>`).join('')}</div>
+          ${p.sizes?`<div class="opt-label">${t('Size')}</div><div class="sizes">${p.sizes.map(s=>`<button class="sz ${s===st.size?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>`:''}
+          ${p.models?`<div class="opt-label">${t('Phone model')}</div><select id="model">${PHONE_MODELS.map(m=>`<option value="${m}" ${m===st.model?'selected':''}>${t(m)}</option>`).join('')}</select>`:''}
+          <div class="opt-label">${t('Quantity')}</div>
           <div class="qty"><button data-q="-1">−</button><span>${st.qty}</span><button data-q="1">+</button></div>
         </div>
 
         <div class="step"><div class="buy">
-          <div class="price">${dt(total)}<small>${v.price} DT × ${st.qty} · ${esc(v.label)} ${esc(p.name.split(' (')[0])}</small></div>
-          <button class="btn accent-bg" id="order">Order Now →</button>
+          <div class="price">${dt(total)}<small><bdi dir="ltr">${v.price} DT × ${st.qty}</bdi> · ${esc(t(v.label))} ${esc(pname(st.product))}</small></div>
+          <button class="btn accent-bg" id="order">${t('Order Now →')}</button>
         </div></div>
       </div>
     </div>`;
@@ -205,7 +227,7 @@ function mountCustomizer(root,opts={}){
 
   async function handleFile(f){
     if(!f)return;
-    try{const d=await fileToDesign(f);st.designs[st.view]=d;render();toast('Design added to your '+P().name.split(' (')[0]+' ✓');}
+    try{const d=await fileToDesign(f);st.designs[st.view]=d;render();toast(t('Design added to your {p} ✓').replace('{p}',pname(st.product)));}
     catch(e){toast(String(e));}
   }
 
@@ -229,14 +251,14 @@ function mountCustomizer(root,opts={}){
   async function checkout(){
     const v=V(),p=P();
     for(const s of v.sides){
-      if(!st.designs[s]){st.view=s;render();toast(v.sides.length>1?`Please upload your ${s} design first`:'Please upload your design first');return;}
+      if(!st.designs[s]){st.view=s;render();toast(v.sides.length>1?t(`Please upload your ${s} design first`):t('Please upload your design first'));return;}
     }
-    const btn=$('#order',root);btn.disabled=true;btn.textContent='Uploading your design…';
+    const btn=$('#order',root);btn.disabled=true;btn.textContent=t('Uploading your design…');
     const urls={};let failed=false;
     for(const s of v.sides){
       try{urls[s]=await uploadDesign(st.designs[s]);}catch(e){failed=true;urls[s]=null;}
     }
-    if(failed)toast('Upload problem: please send your design file in the WhatsApp chat');
+    if(failed)toast(t('Upload problem: please send your design file in the WhatsApp chat'));
     const order={
       product:st.product,productName:p.name,variantId:v.id,variantLabel:v.label,variantDesc:v.desc,unit:v.price,qty:st.qty,total:v.price*st.qty,
       color:COLORS[st.color][0],colorKey:st.color,size:p.sizes?st.size:null,model:p.models?st.model:null,
@@ -282,6 +304,7 @@ function openLink(u){const a=document.createElement('a');a.href=u;a.target='_bla
 
 document.addEventListener('DOMContentLoaded',()=>{
   layout();
+  applyI18n();
   $$('.faq-item button').forEach(b=>b.onclick=()=>{const it=b.parentElement,a=$('.a',it);const o=it.classList.toggle('open');a.style.maxHeight=o?a.scrollHeight+'px':0;});
   const slot=$('#customizer-mount');
   if(slot){
