@@ -1,6 +1,16 @@
 /* Print House – shared logic */
 const WA_NUMBER = '21624050066';
 const WA_NUMBER2 = '21653463975';
+/* Image hosting (Cloudinary, unsigned preset). Fill both to send the design as a link in the WhatsApp message. */
+const CLOUDINARY = {cloud:'jaidjole', preset:'printhouse'};
+async function uploadDesign(d){
+  if(!CLOUDINARY.cloud||!CLOUDINARY.preset)return null;
+  const blob=(d.file&&d.file.size<=9.5*1024*1024)?d.file:await (await fetch(d.data)).blob();
+  const fd=new FormData();fd.append('file',blob);fd.append('upload_preset',CLOUDINARY.preset);
+  const r=await fetch('https://api.cloudinary.com/v1_1/'+CLOUDINARY.cloud+'/image/upload',{method:'POST',body:fd});
+  if(!r.ok)throw new Error('upload failed');
+  return (await r.json()).secure_url;
+}
 const WA_ICON = '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C8.8 3 3 8.8 3 16c0 2.3.6 4.5 1.7 6.4L3 29l6.8-1.8A13 13 0 0 0 16 29c7.2 0 13-5.8 13-13S23.2 3 16 3zm0 23.7c-2 0-3.9-.6-5.5-1.6l-.4-.2-4 1 1.1-3.9-.3-.4A10.6 10.6 0 1 1 16 26.7zm5.8-7.9c-.3-.2-1.9-.9-2.200-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.400-.5-2.600-1.600-1-.9-1.600-1.900-1.800-2.200-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.400s1 2.800 1.200 3c.1.200 2 3.100 4.900 4.300.7.300 1.200.5 1.600.6.700.2 1.300.2 1.800.1.600-.1 1.900-.8 2.100-1.500.3-.7.300-1.400.2-1.500-.1-.1-.3-.2-.6-.4z"/></svg>';
 
 const COLORS = {
@@ -115,7 +125,7 @@ function fileToDesign(file){
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
         const t=document.createElement('canvas');const ts=Math.min(1,260/Math.max(img.width,img.height));
         t.width=Math.round(img.width*ts);t.height=Math.round(img.height*ts);t.getContext('2d').drawImage(img,0,0,t.width,t.height);
-        res({name:file.name,size:file.size,data:c.toDataURL('image/png'),thumb:t.toDataURL('image/png'),w:img.width,h:img.height});
+        res({file:file,name:file.name,size:file.size,data:c.toDataURL('image/png'),thumb:t.toDataURL('image/png'),w:img.width,h:img.height});
       };
       img.onerror=()=>rej('Could not read this image.');
       img.src=fr.result;
@@ -216,15 +226,21 @@ function mountCustomizer(root,opts={}){
     $('#order',root).onclick=checkout;
   }
 
-  function checkout(){
+  async function checkout(){
     const v=V(),p=P();
     for(const s of v.sides){
       if(!st.designs[s]){st.view=s;render();toast(v.sides.length>1?`Please upload your ${s} design first`:'Please upload your design first');return;}
     }
+    const btn=$('#order',root);btn.disabled=true;btn.textContent='Uploading your design…';
+    const urls={};let failed=false;
+    for(const s of v.sides){
+      try{urls[s]=await uploadDesign(st.designs[s]);}catch(e){failed=true;urls[s]=null;}
+    }
+    if(failed)toast('Upload problem: please send your design file in the WhatsApp chat');
     const order={
-      product:st.product,productName:p.name,variantLabel:v.label,variantDesc:v.desc,unit:v.price,qty:st.qty,total:v.price*st.qty,
-      color:COLORS[st.color][0],size:p.sizes?st.size:null,model:p.models?st.model:null,
-      files:v.sides.map(s=>({side:s,name:st.designs[s].name,thumb:st.designs[s].thumb,w:st.designs[s].w,h:st.designs[s].h}))
+      product:st.product,productName:p.name,variantId:v.id,variantLabel:v.label,variantDesc:v.desc,unit:v.price,qty:st.qty,total:v.price*st.qty,
+      color:COLORS[st.color][0],colorKey:st.color,size:p.sizes?st.size:null,model:p.models?st.model:null,
+      files:v.sides.map(s=>({side:s,name:st.designs[s].name,thumb:st.designs[s].thumb,w:st.designs[s].w,h:st.designs[s].h,url:urls[s]||null}))
     };
     save('ph_order',order);
     location.href='order.html';
@@ -235,20 +251,30 @@ function mountCustomizer(root,opts={}){
 }
 
 /* ---------- WhatsApp ---------- */
+const AR={
+  product:{tshirt:'تيشورت',hoodie:'هودي',beanie:'بونيه',case:'كاش تليفون',tote:'ساك توت'},
+  variant:{standard:'عادي',retro:'ريترو'},
+  desc:{'Front print only':'طباعة من الأمام فقط','Front + Back print':'طباعة أمام + ظهر','Cuff print':'طباعة على الحافة','Back print':'طباعة من الخلف','Front print':'طباعة من الأمام'},
+  color:{black:'أسود',white:'أبيض',navy:'كحلي',red:'أحمر',sand:'بيج',forest:'أخضر غامق',blue:'أزرق',grey:'رمادي',natural:'طبيعي',charcoal:'رمادي غامق',orange:'برتقالي'},
+  side:{front:'الأمام',back:'الخلف'}
+};
 function buildWaMessage(o,c){
   const L=[];
-  L.push('Hello Print House! 👋 I would like to confirm my order:','');
-  L.push('🧾 Order ref: '+o.ref);
-  L.push('🛍 Product: '+o.productName+' – '+o.variantLabel+' ('+o.variantDesc+')');
-  L.push('🎨 Colour: '+o.color);
-  if(o.size)L.push('📏 Size: '+o.size);
-  if(o.model)L.push('📱 Phone model: '+o.model);
-  L.push('🔢 Quantity: '+o.qty);
-  L.push('💰 Price: '+o.unit+' DT × '+o.qty+' = '+o.total+' DT');
-  o.files.forEach(f=>L.push('🖼 Design file ('+(o.files.length>1?f.side:'print')+'): '+f.name));
-  L.push('','👤 Name: '+c.name,'📞 WhatsApp: '+c.phone,'📍 Address: '+c.address+(c.city?', '+c.city:''));
-  if(c.notes)L.push('📝 Notes: '+c.notes);
-  L.push('','I will send my design file in this chat. Thank you!');
+  L.push('السلام عليكم Print House، نحب نأكد الطلب متاعي:','');
+  L.push('رقم الطلب: '+o.ref);
+  L.push('المنتج: '+(AR.product[o.product]||o.productName)+' - '+(AR.variant[o.variantId]||o.variantLabel)+' ('+(AR.desc[o.variantDesc]||o.variantDesc)+')');
+  L.push('اللون: '+(AR.color[o.colorKey]||o.color));
+  if(o.size)L.push('المقاس: '+o.size);
+  if(o.model)L.push('موديل التليفون: '+o.model);
+  L.push('الكمية: '+o.qty);
+  L.push('السعر: '+o.unit+' DT × '+o.qty+' = '+o.total+' DT','');
+  o.files.forEach(f=>{
+    const side=o.files.length>1?' ('+AR.side[f.side]+')':'';
+    L.push('التصميم'+side+': '+(f.url||('الملف '+f.name+' (باش نبعثو في الشات)')));
+  });
+  L.push('','الاسم: '+c.name,'رقم الواتساب: '+c.phone,'العنوان: '+c.address+(c.city?'، '+c.city:''));
+  if(c.notes)L.push('ملاحظات: '+c.notes);
+  L.push('','شكرا!');
   return L.join('\n');
 }
 const waLink=(msg,num)=>'https://wa.me/'+(num||WA_NUMBER)+'?text='+encodeURIComponent(msg);
